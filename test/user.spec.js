@@ -103,4 +103,68 @@ describe('Unit tests user', () => {
             expect(res.json).toHaveBeenCalledWith(req.body);
         });
     });
+    //A METTRE DANS USER.SPEC.JS (REGARDER COMMENT C'EST FAIT POUR BIEN L'IMPLEMENTER)
+
+describe('get one user', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('should return one user',async() => {
+        await userController.getUserById(req, res);
+        expect(userMockFunction.findOne).toHaveBeenCalledWith({where: {id: req.params.id}});
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith(user);
+    });
+
+    it('should find user not exist',async() => {
+        req.params.id = 2;
+        await userController.getUserById(req, res);
+        expect(userMockFunction.findOne).toHaveBeenCalledWith({where: {id: req.params.id}});
+        expect(res.sendStatus).toHaveBeenCalledWith(404);
+    });
+
+    it('should user are not authorize',async() => {
+        req.user.role = 'user';
+        req.params.id = 2;
+        await userController.getUserById(req, res);
+        expect(userMockFunction.findOne).not.toHaveBeenCalled();
+        expect(res.sendStatus).toHaveBeenCalledWith(403);
+        req.user.role = 'admin';
+    });
+});
+
+describe('update user',  () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('should not have access',async() => {
+        req.params.id = 3;
+        req.user.role = "user";
+        await userController.updateUser(req, res);
+        expect(res.sendStatus).toHaveBeenCalledWith(403);
+    });
+
+    it('should not find user',async() => {
+        req.params.id = 2;
+        req.user.role = "user";
+        req.user.id = 2;
+        await userController.updateUser(req, res);
+        expect(userMockFunction.findOne).toHaveBeenCalledWith({where: {id: req.params.id}});
+        expect(res.sendStatus).toHaveBeenCalledWith(404);
+    });
+
+    it('should update user',async() => {
+        req.params.id = 1;
+        req.user.role = "user";
+        req.user.id = 1;
+        req.body.last_name = "jallali";
+        await userController.updateUser(req, res);
+        expect(userMockFunction.findOne).toHaveBeenCalledWith({where: {id: req.params.id}});
+        expect(userMockFunction.update).toHaveBeenCalledWith({...req.body}, {where: {id: req.params.id}});
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith(req.body);
+    });
+});
 });
